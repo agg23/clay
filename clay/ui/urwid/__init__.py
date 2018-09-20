@@ -62,6 +62,7 @@ class AppWidget(urwid.Frame):
             PlaylistsPage(self),
             SearchPage(self),
             QueuePage(self),
+            PodcastsPage(self),
             SettingsPage(self)
         ]
         self.tabs = [AppWidget.Tab(page) for page in self.pages]
@@ -231,6 +232,10 @@ class AppWidget(urwid.Frame):
     def show_playlists(self):
         """ Show playlists page. """
         self.set_page('playlists')
+
+    def show_podcasts(self):
+        """ Show podcasts page. """
+        self.set_page('podcasts')
 
     def show_stations(self):
         """ Show stations page. """

@@ -21,6 +21,7 @@ hotkeys:
       show_playlists: meta + 4
       show_search: meta + 5
       show_queue: meta + 6
+      show_podcasts: meta + 7
       show_settings: meta + 9
 
     song_item:

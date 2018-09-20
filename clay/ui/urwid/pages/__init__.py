@@ -4,5 +4,6 @@ from .library import LibraryPage
 from .playlists import PlaylistsPage
 from .stations import StationsPage
 from .playerqueue import QueuePage
+from .podcasts import PodcastsPage
 from .search import SearchPage
 from .settings import SettingsPage
