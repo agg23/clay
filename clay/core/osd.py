@@ -5,6 +5,8 @@ from threading import Thread
 from pydbus import SessionBus, Variant
 from clay.core import meta, logger
 
+NOTIFICATION_BUS_NAME = ".Notifications"
+BASE_NAME = "org.freedesktop"
 
 class _OSDManager(object):
     """
@@ -13,8 +15,11 @@ class _OSDManager(object):
     def __init__(self):
         self._last_id = 0
         self.bus = SessionBus()
-        self.notifications = self.bus.get(".Notifications")
-        self.notifications.onActionInvoked = self._on_action
+
+        self.bus.watch_name(BASE_NAME + NOTIFICATION_BUS_NAME, name_appeared=self._registerBusName, 
+                    name_vanished=self._deregisterBusName)
+        self._registerBusName(None)
+
         self._actions = {"default": print}
 
     def add_to_action(self, action, action_name, function):
@@ -65,7 +70,8 @@ class _OSDManager(object):
         """
         An implementation of Desktop Notifications Specification 1.2.
         For a detailed explanation see: https://developer.gnome.org/notification-spec/
-
+        
+        Does not fire if notifications were not properly set up
         Args:
            summary (`str`): A single line overview of the notification
            body (`str`): A mutli-line body of the text
@@ -75,14 +81,28 @@ class _OSDManager(object):
            expiration (`int`): The time until the notification automatically closes. -1 to make the
               server decide and 0 for never. Defaults to 5000.
            icon (`str`): The string to icon it displays in the notification. Defaults to headbuds.
-
+        
         Returns:
            Nothing.
         """
+        if not hasattr(self, 'notifications'):
+            return
+        
         self._last_id = self.notifications.Notify(meta.APP_NAME, self._last_id if replace else 0,
                                                   icon, summary, body,
                                                   actions if actions is not None else list(),
                                                   hints if hints is not None else dict(),
                                                   expiration)
+
+    def _registerBusName(self, nameOwner):
+        try:
+            self.notifications = self.bus.get(NOTIFICATION_BUS_NAME)
+            self.notifications.onActionInvoked = self._on_action
+        except Exception as exception:  # pylint: disable=broad-except
+            # Bus name did not exist
+            pass
+
+    def _deregisterBusName(self):
+        self.notifications = None
 
 osd_manager = _OSDManager()  # pylint: disable=invalid-name
