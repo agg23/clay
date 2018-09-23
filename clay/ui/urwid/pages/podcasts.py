@@ -4,28 +4,30 @@ Components for "podcasts" page
 import urwid
 
 from .page import AbstractPage, AbstractListItem, AbstractListBox
+from clay.core.gp.podcast import PodcastEpisode
 from clay.core import gp
 from clay.ui.urwid import SongListBox, hotkey_manager
+from clay.core.log import logger
+
 
 class PodcastListBox(AbstractListBox):
-    def populate(self, artists):
-        items = []
-        for artist in sorted(artists, key=artists.__getitem__):
-            artist = AbstractListItem(artists[artist], self._icon)
-            urwid.connect_signal(artist, 'activate', self.item_activated)
-            items.append(artist)
-        self.walker[:] = items
-        self.app.redraw()
+    def auth_state_changed(self, is_auth):
+        """
+        Called when auth state changes (e. g. user is logged in).
+        Requests fetching of podcasts.
+        """
+        if is_auth:
+            self.walker[:] = [
+                urwid.Text(u'\n \uf01e Loading podcasts...', align='center')
+            ]
+
+            gp.get_all_user_podcasts_async(callback=self.populate)
+
 
 class PodcastEpisodeListBox(AbstractListBox):
-    def populate(self, albums):
-        items = []
-        for album in albums:
-            album = AbstractListItem(album, album.icon)
-            urwid.connect_signal(album, 'activate', self.item_activated)
-            items.append(album)
-        self.walker[:] = items
-        self.app.redraw()
+    def populate(self, podcasts):
+        super().populate(sorted(podcasts, key=lambda podcast: podcast.publication_timestamp, reverse=True))
+
 
 class PodcastsPage(urwid.Columns, AbstractPage):
     """
@@ -61,9 +63,8 @@ class PodcastsPage(urwid.Columns, AbstractPage):
 
         super(PodcastsPage, self).__init__([self.podcastlist, self.episodelist, self.songlist])
 
-    def podcast_activated(self, artist):
-        pass
-        # self.albumlist.populate(artist.albums)
+    def podcast_activated(self, podcast):
+        self.episodelist.populate(gp.get_cached_podcast_episodes(podcast))
 
     def activate(self):
         pass

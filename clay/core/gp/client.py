@@ -23,6 +23,7 @@ from clay.core.log import logger
 
 from .artist import Artist
 from .track import Track
+from .podcast import Podcast, PodcastEpisode
 from .playlist import Playlist, LikedSongs
 from .station import Station, IFLStation
 from .search import SearchResults
@@ -54,6 +55,8 @@ class _GP(object):
         self.cached_stations = None
         self.cached_artists = {}
         self.cached_albums = {}
+        self.cached_podcasts = None
+        self.cached_podcast_episodes = None
 
         self.invalidate_caches()
 
@@ -139,6 +142,27 @@ class _GP(object):
             self.cached_artists[lname] = Artist(artist_id, name)
 
         return self.cached_artists[lname]
+
+    @synchronized
+    def add_podcast(self, podcast_id, title, description):
+        """
+        Creates or lookup a podcast object and return it.
+
+        Args:
+           podcast_id (`str`): The Podcast id given by Google Play Music
+           title (`str`): The Podcast title given by Google Play Music
+           description (`str`): The Podcast description given by Google Play music
+
+        Returns:
+           The Podcast class
+        """
+        if self.cached_podcasts is None:
+            self.cached_podcasts = {}
+
+        if podcast_id not in self.cached_podcasts:
+            self.cached_podcasts[podcast_id] = Podcast(podcast_id, title, description)
+
+        return self.cached_podcasts[podcast_id]
 
     @synchronized
     def use_authtoken(self, authtoken, device_id):
@@ -231,6 +255,27 @@ class _GP(object):
     get_all_user_playlist_contents_async = (  # pylint: disable=invalid-name
         asynchronous(get_all_user_playlist_contents)
     )
+
+    @synchronized
+    def get_all_user_podcasts(self, **_):
+        if self.cached_podcasts:
+            return self.cached_podcasts
+
+        self.cached_podcasts = {}
+
+        self.cached_podcast_episodes = PodcastEpisode.from_data(
+            self.mobile_client.get_all_podcast_episodes(),
+            True
+        )
+
+        return self.cached_podcasts.values()
+
+    get_all_user_podcasts_async = (  # pylint: disable=invalid-name
+        asynchronous(get_all_user_podcasts)
+    )
+
+    def get_cached_podcast_episodes(self, podcast, **_):
+        return self.cached_podcast_episodes[podcast.id]
 
     def get_cached_tracks_map(self):
         """
