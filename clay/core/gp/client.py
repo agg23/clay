@@ -216,6 +216,14 @@ class _GP(object):
 
     get_stream_url_async = asynchronous(get_stream_url)
 
+    def get_podcast_stream_url(self, podcast_id):
+        """
+        Returns playable stream URL of podcast by id.
+        """
+        return self.mobile_client.get_podcast_episode_stream_url(podcast_id)
+
+    get_podcast_stream_url_async = asynchronous(get_podcast_stream_url)
+
     @synchronized
     def get_all_user_station_contents(self, **_):
         """

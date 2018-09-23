@@ -85,3 +85,22 @@ class PodcastEpisode(object):
         return PodcastEpisode(
             data=data
         )
+
+    def get_url(self, callback):
+        """
+        Gets playable stream URL for this Podcast.
+
+        "callback" is called with "(url, error)" args after URL is fetched.
+
+        Keep in mind this URL is valid for a limited time.
+        """
+        def on_get_url(url, error):
+            """
+            Called when URL is fetched.
+            """
+            self.cached_url = url
+            callback(url, error, self)
+
+        podcast_id = str(self.id)
+        client.gp.get_podcast_stream_url_async(podcast_id, callback=on_get_url)
+
